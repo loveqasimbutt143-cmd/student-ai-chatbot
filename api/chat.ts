@@ -1,47 +1,39 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-// ⚠️ Path ka dhyan rakhna hai: Chunki yeh file 'api' folder me hai, 
-// to 'src' folder me jaane ke liye '../src' use hoga.
-import { askLocalAI } from '../src/services/aiService'; 
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { askLocalAI } from '../src/services/aiService';
 
-dotenv.config();
+// Vercel Native Handler (No Express Jhanjhat!)
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // CORS Headers allow karna taake frontend block na ho
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    );
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+    // Pre-flight request check
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
-// Middlewares
-app.use(cors({ origin: '*' })); 
-app.use(express.json());
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
 
-// 1. Home route (Sirf check karne ke liye)
-app.get('/', (req, res) => {
-    res.send('Zabardast! Aapka Student Chatbot Server Live Hai! 🚀');
-});
-
-// 2. 🎯 Vercel Serverless Post Endpoint
-app.post('/api/chat', async (req, res) => {
     try {
         const { prompt } = req.body;
-        
+
         if (!prompt) {
-            return res.status(400).json("Prompt is required");
+            return res.status(400).json("Prompt input missing!");
         }
 
+        // Call Groq AI Service
         const reply = await askLocalAI(prompt);
-        return res.json(reply);
+        return res.status(200).json(reply);
+
     } catch (err: any) {
-        console.error("Route Error:", err.message);
-        return res.status(500).json(err.message || "Internal Server Error");
+        console.error("Vercel Runtime Error:", err.message);
+        return res.status(500).json(`Server Error: ${err.message || 'Unknown'}`);
     }
-});
-
-// Local test karne ke liye (Vercel isay production me bypass kar deta hai)
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, () => {
-        console.log(`Server running successfully on: http://localhost:${PORT}`);
-    });
 }
-
-// Vercel ke liye sab se zaroori line:
-export default app;
