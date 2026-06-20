@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Local Student AI (ChatGPT Style)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #212121; color: #ececf1; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        
+        .chat-container { width: 100%; max-width: 800px; height: 90vh; display: flex; flex-direction: column; background-color: #2f2f2f; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .chat-header { padding: 20px; background-color: #202123; text-align: center; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid #4d4d4d; color: #10a37f; }
+        
+        .chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* Messages Styling */
+        .message { padding: 12px 18px; border-radius: 8px; max-width: 75%; line-height: 1.5; font-size: 1rem; word-wrap: break-word; }
+        .user-message { background-color: #10a37f; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .ai-message { background-color: #444654; color: #ececf1; align-self: flex-start; border-bottom-left-radius: 2px; }
+        
+        /* Input Area */
+        .input-area { padding: 20px; background-color: #202123; display: flex; gap: 10px; border-top: 1px solid #4d4d4d; }
+        input { flex: 1; padding: 14px; background-color: #40414f; border: 1px solid #565869; border-radius: 8px; color: white; font-size: 1rem; outline: none; }
+        input:focus { border-color: #10a37f; }
+        button { padding: 0 24px; background-color: #10a37f; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        button:hover { background-color: #1a7f65; }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">🤖 Student AI Assistant </div>
+        <div class="chat-box" id="chatBox">
+            <div class="message ai-message">Asalam-o-Alaikum! Main aapka AI assistant hoon. Computer Science ke mutaliq koi bhi sawaal poochein.</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type your question here... (e.g., What is an Array?)" onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // 1. User ka message screen par dikhana
+            appendMessage(text, 'user-message');
+            userInput.value = ''; // Input box khali karna
+
+            // 2. Loading state dikhana
+            const loadingDiv = appendMessage('🤖 AI Soch raha hai...', 'ai-message');
+
+            try {
+                // 3. Aapke Node.js TypeScript Server ko hit karna
+                const response = await fetch('http://localhost:5000/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: text })
+                });
+
+                const data = await response.json();
+                
+                // Loading text hata kar asli jawab likhna
+                loadingDiv.remove();
+
+                if (data.reply) {
+                    appendMessage(data.reply, 'ai-message');
+                } else {
+                    appendMessage('❌ Sorry, server se sahi jawab nahi mila.', 'ai-message');
+                }
+
+            } catch (error) {
+                loadingDiv.remove();
+                appendMessage('❌ Error: Check karein ke aapka Node.js server terminal me chal raha hai ya nahi.', 'ai-message');
+                console.error(error);
+            }
+        }
+
+        function appendMessage(text, className) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${className}`;
+            messageDiv.innerText = text;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll down
+            return messageDiv;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
