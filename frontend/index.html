@@ -403,9 +403,10 @@
     </div>
 
     <!-- Front-End Communication Logic -->
+     <!-- Front-End Communication Logic -->
     <script>
-        // ⚠️ APNA VERCEL LIVE URL YAHAN PASTE KAREIN:
-        const VERCEL_URL = 'https://YOUR_VERCEL_PROJECT_NAME.vercel.app/api/chat';
+        // ✅ APNA VERCEL LIVE URL (Screenshot 2026-06-20 065357.png ke mutabiq):
+        const VERCEL_URL = 'https://student-ai-chatbot-chi.vercel.app/api/chat';
 
         const chatBody = document.getElementById('chatBody');
         const userInput = document.getElementById('userInput');
@@ -414,8 +415,8 @@
 
         // Function to create Chat Bubbles safely
         function appendMessage(text, isUser) {
-            // Hide welcome screen on first text exchange
-            if(welcomeScreen) welcomeScreen.style.display = 'none';
+            // Welcome screen ko chupane ke liye
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
 
             const msgDiv = document.createElement('div');
             msgDiv.classList.add('message');
@@ -426,7 +427,7 @@
             chatBody.scrollTop = chatBody.scrollHeight; // Auto scroll down
         }
 
-        // Function to show/hide typing indicator dots
+        // Function to show typing indicator dots
         function showLoader() {
             const loaderDiv = document.createElement('div');
             loaderDiv.classList.add('typing-indicator');
@@ -438,55 +439,54 @@
 
         function removeLoader() {
             const loader = document.getElementById('typingLoader');
-            if(loader) loader.remove();
+            if (loader) loader.remove();
         }
 
         // Logic to send text to Cloud Vercel Backend API
         async function handleSendMessage() {
             const promptValue = userInput.value.trim();
-            if(!promptValue) return; // Khali text process nahi hoga
+            if (!promptValue) return; // Khali message send nahi hoga
 
-            // 1. User ka chat append karein
+            // 1. User ka message screen par dikhayein
             appendMessage(promptValue, true);
-            userInput.value = ''; // Clean input bar
+            userInput.value = ''; // Input bar khali karein
 
-            // 2. Typing animation activate karein
+            // 2. Loading dots shuru karein
             showLoader();
 
             // 3. API Network hit karein
             try {
-                // ❌ Purana link hata dein aur exact ye wala lagayein:
-                const VERCEL_URL = 'https://student-ai-chatbot-chi.vercel.app/api/chat'; {
+                const response = await fetch(VERCEL_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ prompt: promptValue })
+                    body: JSON.stringify({ prompt: promptValue }) // Backend key match 'prompt'
                 });
 
-                if(!response.ok) {
+                if (!response.ok) {
                     throw new Error("Server bad response status");
                 }
 
                 const data = await response.json();
                 removeLoader();
                 
-                // Backend se jo response text aaye use screen par dikhayein
+                // 4. AI ka jawab screen par dikhayein
                 appendMessage(data, false);
 
             } catch (error) {
                 removeLoader();
                 console.error("System Fetch Error:", error);
-                appendMessage("❌ Error: Cloud server aapki request process nahi kar pa raha. Apna Vercel link aur configuration check karein.", false);
+                appendMessage("❌ Error: Cloud server aapki request process nahi kar pa raha. Apna backend check karein.", false);
             }
         }
 
         // Button Click Event Listener
         sendBtn.addEventListener('click', handleSendMessage);
 
-        // Enter key press verification listener
+        // Enter key press listener
         userInput.addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') {
+            if (e.key === 'Enter') {
                 handleSendMessage();
             }
         });
